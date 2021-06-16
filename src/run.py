@@ -100,35 +100,10 @@ class ContentDifficultyRating:
         text = text.lower()
         return text
 
-    def get_word_frequencies2(self, subtitles: List[srt.Subtitle], use_nl_borrow_words=False) -> int:
-        frequency_values = []
-        for subtitle in subtitles:
-            if not subtitle.content:
-                continue
-            text = self.clean_subtitle_text(subtitle.content)
-            tokens = [token.strip() for token in TOKEN_SPLIT_REGEX.findall(text)]
-            frequency_values += [self.get_token_frequency(token, use_nl_borrow_words=use_nl_borrow_words) for token in tokens]
-        return frequency_values
-
     def get_word_frequencies(self, text: str, use_nl_borrow_words=False) -> int:
         tokens = [token.strip() for token in TOKEN_SPLIT_REGEX.findall(text)]
         frequency_values = [self.get_token_frequency(token, use_nl_borrow_words=use_nl_borrow_words) for token in tokens]
         return frequency_values
-
-    def get_wpms(self, subtitles: List[srt.Subtitle]) -> List[int]:
-        num_words = 0
-        wpms = []
-        for subtitle in subtitles:
-            if not subtitle.content:
-                continue
-            text = self.clean_subtitle_text(subtitle.content)
-            words = re.split(WORD_SPLIT_REGEX, text)
-            num_words = len(words)
-            time_diff = subtitle.end - subtitle.start
-            time_diff_minutes = time_diff.total_seconds() / 60
-            wpm = num_words / time_diff_minutes
-            wpms.append(wpm)
-        return wpms
 
     def get_wpm(self, text, start, end) -> int:
         words = re.split(WORD_SPLIT_REGEX, text)
@@ -141,33 +116,6 @@ class ContentDifficultyRating:
     def segment_sentences(self, text: str) -> List[str]:
         splits = self.splitter.split([text])[0]
         return splits
-
-    def get_words_per_sentence2(self, subtitles: List[srt.Subtitle]) -> Tuple[List[int], int, int]:
-        words_per_sentence_values = []
-        num_true_sentences_found = 0
-        all_text = ''
-        for subtitle in subtitles:
-            if not subtitle.content:
-                continue
-            text = self.clean_subtitle_text(subtitle.content)
-            all_text += ' ' + text
-
-        all_text = all_text.strip()
-        has_punctuation = re.search(END_PUNCTUATION_REGEX, all_text) is not None
-        use_true_sentences = False
-        if has_punctuation:
-            sentences = re.split(END_PUNCTUATION_REGEX, all_text)
-            if max(len(re.split(WORD_SPLIT_REGEX, sentence)) for sentence in sentences) < REALISTIC_MAX_SENTENCE_LENGTH:
-                use_true_sentences = True
-                num_true_sentences_found += len(sentences)
-        if not use_true_sentences:
-            sentences = self.segment_sentences(all_text)
-
-        for sentence in sentences:
-            sentence = str(sentence).strip()
-            words = re.split(WORD_SPLIT_REGEX, sentence)
-            words_per_sentence_values.append(len(words))
-        return words_per_sentence_values, len(sentences), num_true_sentences_found
 
     def get_words_per_sentence(self, all_text: str) -> Tuple[List[int], int, int]:
         words_per_sentence_values = []
@@ -189,50 +137,6 @@ class ContentDifficultyRating:
             words = re.split(WORD_SPLIT_REGEX, sentence)
             words_per_sentence_values.append(len(words))
         return words_per_sentence_values, len(sentences), num_true_sentences_found
-
-
-    def calculate2(self):
-        stats = []
-        include_nl_borrow_words = self.native_language is not None
-        for content_title in tqdm(os.listdir(SUBTITLES_DIR)):
-            if self.content_title is not None and content_title != self.content_title:
-                continue
-            print('Content:', content_title)
-            word_frequency_values = []
-            wpms = []
-            words_per_sentence_values = []
-            total_num_sentences = 0
-            total_num_true_sentences = 0
-            subtitle_filenames = [f for f in os.listdir(os.path.join(SUBTITLES_DIR, content_title)) if f.endswith(SUPPORTED_SUBTITLE_FILE_TYPES)]
-            for i, subtitle_filename in enumerate(subtitle_filenames):
-                subtitle_path = os.path.join(SUBTITLES_DIR, content_title, subtitle_filename)
-                if self.verbose:
-                    print(i+1, '-', subtitle_filename)
-                if subtitle_filename.endswith('.ttml'):
-                    subtitles = self.parse_ttml(subtitle_path)
-                elif subtitle_filename.endswith('.srt'):
-                    with open(subtitle_path, encoding='utf-8') as srt_file:
-                        subtitles = self.parse_srt(srt_file.read())
-                word_frequency_values.extend(self.get_word_frequencies(subtitles, include_nl_borrow_words))
-                wpms.extend(self.get_wpms(subtitles))
-                wps_values, num_sentences, num_true_sentences_found = self.get_words_per_sentence(subtitles)
-                words_per_sentence_values.extend(wps_values)
-                total_num_sentences += num_sentences
-                total_num_true_sentences += num_true_sentences_found
-
-            freq_percentile_80 = statistics.quantiles(word_frequency_values, n=10, method='inclusive')[-2]
-            median_wpm = statistics.median(wpms)
-            median_wps = statistics.median(words_per_sentence_values)
-            stats.append({
-                'title': content_title,
-                'num_subtitle_files': len(subtitle_filenames),
-                'freq_percentile_80': int(freq_percentile_80),
-                'wpm_median': int(median_wpm),
-                'wps_median': median_wps,
-                'num_sentences': total_num_sentences,
-                'num_true_sentences': total_num_true_sentences
-            })
-        return stats
 
     def extract_subtitles(self, subtitle_path) -> List[srt.Subtitle]:
         if subtitle_path.endswith('.ttml'):
@@ -286,7 +190,6 @@ class ContentDifficultyRating:
                 'num_true_sentences': total_num_true_sentences
             })
         return stats
-
 
     @staticmethod
     def print_results(stats):
