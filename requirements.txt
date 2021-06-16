@@ -1,0 +1,4 @@
+srt==3.4.1
+lxml==4.6.3
+nnsplit==0.5.7-post0
+tqdm==4.61.1
