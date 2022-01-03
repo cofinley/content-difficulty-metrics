@@ -1,5 +1,8 @@
 venv
 .vscode
+.idea
 __pycache__
 data/subtitles/*
 data/frequency_lists/*
+data/csv/*
+notebooks
