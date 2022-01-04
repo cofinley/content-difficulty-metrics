@@ -9,7 +9,7 @@ words per minute, grammar structures per sentence, amount of proper noun usage, 
 media to get an estimate of relative difficulty.
 
 This idea only went so far; not everything is subtitled and auto-generated subtitles don't have good sentence boundaries
-on which the metrics rely. I transfer-learned [my own huggingface model](https://huggingface.co/cfinley/punct_restore_fr) to do sentence boundary detection (SBD) using
+on which the metrics rely. I transfer-learned [my own huggingface model](https://huggingface.co/cfinley/punct_restore_fr) (model construction repo [here](https://github.com/cofinley/punct_restore_fr)) to do sentence boundary detection (SBD) using
 a corpus from opensubtitles. The model had good results, but even after collecting metrics, I didn't find that the
 rankings between the media were accurate. You can see some cursory results that were brought into a Google Sheet [here](https://docs.google.com/spreadsheets/d/1F9YxGvBSHveR6llqxVc6Sor8PsFZ4iO_OUuNOvS12Og/edit?usp=sharing).
 
