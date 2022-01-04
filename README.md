@@ -1,6 +1,6 @@
 # Content Difficulty Metrics
 
-An older project from 2021 that I'm now archiving here for posterity/archiving.
+An older project from 2021 that I'm now uploading here for posterity/archiving.
 
 This project attempted to derive the 'difficulty' of subtitled media using NLP. This was
 used in hopes of automating the search for [comprehensible input](https://en.wikipedia.org/wiki/Input_hypothesis).
