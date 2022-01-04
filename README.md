@@ -13,10 +13,6 @@ on which the metrics rely. I transfer-learned [my own huggingface model](https:/
 a corpus from opensubtitles. The model had good results, but even after collecting metrics, I didn't find that the
 rankings between the media were accurate. You can see some cursory results that were brought into a Google Sheet [here](https://docs.google.com/spreadsheets/d/1F9YxGvBSHveR6llqxVc6Sor8PsFZ4iO_OUuNOvS12Og/edit?usp=sharing).
 
-I learned that humans must be in the loop here. It would be better to derive a sequential ranking from some pairwise
-comparisons of media (i.e. "Which is easier, Peppa Pig or Amélie?"). With enough crowdsourced data, I believe
-subjectivity would diminish and great rankings would emerge. But that's for a different day.
-
 **Note:** this was for French and has some hardcoded French things (like frequency list in sentence_metrics.py, SBD
 model in sbd.py). I'm just committing this to put it out there for now.
 
