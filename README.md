@@ -1,6 +1,6 @@
 # Content Difficulty Metrics
 
-An older project from 2021 that I'm now archiving here for posterity/archiving.
+An older project from 2021 that I'm now uploading here for posterity/archiving.
 
 This project attempted to derive the 'difficulty' of subtitled media using NLP. This was
 used in hopes of automating the search for [comprehensible input](https://en.wikipedia.org/wiki/Input_hypothesis).
@@ -9,13 +9,9 @@ words per minute, grammar structures per sentence, amount of proper noun usage, 
 media to get an estimate of relative difficulty.
 
 This idea only went so far; not everything is subtitled and auto-generated subtitles don't have good sentence boundaries
-on which the metrics rely. I transfer-learned [my own huggingface model](https://huggingface.co/cfinley/punct_restore_fr) to do sentence boundary detection (SBD) using
+on which the metrics rely. I transfer-learned [my own huggingface model](https://huggingface.co/cfinley/punct_restore_fr) (model construction repo [here](https://github.com/cofinley/punct_restore_fr)) to do sentence boundary detection (SBD) using
 a corpus from opensubtitles. The model had good results, but even after collecting metrics, I didn't find that the
 rankings between the media were accurate. You can see some cursory results that were brought into a Google Sheet [here](https://docs.google.com/spreadsheets/d/1F9YxGvBSHveR6llqxVc6Sor8PsFZ4iO_OUuNOvS12Og/edit?usp=sharing).
-
-I learned that humans must be in the loop here. It would be better to derive a sequential ranking from some pairwise
-comparisons of media (i.e. "Which is easier, Peppa Pig or Amélie?"). With enough crowdsourced data, I believe
-subjectivity would diminish and great rankings would emerge. But that's for a different day.
 
 **Note:** this was for French and has some hardcoded French things (like frequency list in sentence_metrics.py, SBD
 model in sbd.py). I'm just committing this to put it out there for now.
