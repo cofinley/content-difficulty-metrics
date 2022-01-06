@@ -9,7 +9,7 @@ import os
 import json
 import string
 import argparse
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 
 import pandas as pd
@@ -103,12 +103,11 @@ def tree_height(root):
         return 1 + max(tree_height(x) for x in root.children)
 
 
-def calculate(df: pd.DataFrame):
-    text = df['text']
-    if not text:
+def calculate(sentence: str) -> Optional[dict]:
+    if not sentence:
         return None
     # Use nlp.pipe(texts, batch_size=N) for better performance, possibly with pd.concat
-    doc = nlp(text)
+    doc = nlp(sentence)
     num_tokens = len(doc)
     mean_chars_per_token = np.mean([len(token) for token in doc])
     max_dep_tree_height = max([tree_height(token) for token in doc])
@@ -126,43 +125,29 @@ def calculate(df: pd.DataFrame):
     freq_values = get_word_frequencies(alpha_tokens, use_borrow_words=False)
     freq_values_with_borrow_words = get_word_frequencies(alpha_tokens, use_borrow_words=True)
 
-    return (
-        num_tokens,
-        mean_chars_per_token,
-        max_dep_tree_height,
-        num_propn,
-        num_entities,
-        num_numbers,
-        num_adj,
-        num_oov,
-        num_noun_chunks,
-        num_verbal_heads,
-        freq_values,
-        freq_values_with_borrow_words
-    )
+    return {
+        'num_tokens': num_tokens,
+        'mean_chars_per_token': mean_chars_per_token,
+        'max_dep_tree_height': max_dep_tree_height,
+        'num_proper_nouns': num_propn,
+        'num_entities': num_entities,
+        'num_numbers': num_numbers,
+        'num_adj': num_adj,
+        'num_out_of_vocab_words': num_oov,
+        'num_noun_chunks': num_noun_chunks,
+        'num_verbal_heads': num_verbal_heads,
+        'freq_values': freq_values,
+        'freq_values_with_borrow_words': freq_values_with_borrow_words
+    }
 
 
 def add_metrics_columns(df: pd.DataFrame) -> pd.DataFrame:
-    columns = [
-        'num_tokens',
-        'mean_chars_per_token',
-        'max_dep_tree_height',
-        'num_propn',
-        'num_entities',
-        'num_numbers',
-        'num_adj',
-        'num_oov',
-        'num_noun_chunks',
-        'num_verbal_heads',
-        'freq_values',
-        'freq_values_with_borrow_words'
-    ]
     df['text'].replace('', np.nan, inplace=True)
     df.dropna(subset=['text'], inplace=True)
     sample_size = min(len(df), MAX_SENTENCES)
     df = df.sample(sample_size)
-    df[columns] = df.progress_apply(calculate, axis='columns', result_type='expand')
-    return df
+    metrics_per_sentence = df['text'].progress_apply(calculate)
+    return pd.DataFrame.from_records(metrics_per_sentence.values)
 
 
 def calculate_sentence_metrics(sentences: pd.Series) -> pd.DataFrame:

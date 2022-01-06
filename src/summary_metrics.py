@@ -36,11 +36,11 @@ def calculate_summary(sentence_metrics_df: pd.DataFrame, content_title: str) -> 
         'num_tokens',
         'max_dep_tree_height',
         'mean_chars_per_token',
-        'num_propn',
+        'num_proper_nouns',
         'num_entities',
         'num_numbers',
         'num_adj',
-        'num_oov',
+        'num_out_of_vocab_words',
         'num_noun_chunks',
         'num_verbal_heads'
     ]
@@ -49,12 +49,12 @@ def calculate_summary(sentence_metrics_df: pd.DataFrame, content_title: str) -> 
         'freq_values_with_borrow_words'
     ]
 
-    p80_metrics = sentence_metrics_df[series_columns].quantile(PERCENTILE).to_dict()
-    summary.update({'p80_' + k: v for k, v in p80_metrics.items()})
+    percentile_metrics = sentence_metrics_df[series_columns].quantile(PERCENTILE).to_dict()
+    summary.update({f'{k}_{int(PERCENTILE*100)}_percentile': v for k, v in percentile_metrics.items()})
 
     for column in reduction_columns:
-        p80 = pd.Series(sentence_metrics_df[column].sum()).quantile(PERCENTILE)
-        summary['p80_'+column] = p80
+        percentile_metric = pd.Series(sentence_metrics_df[column].sum()).quantile(PERCENTILE)
+        summary[f'{column}_{int(PERCENTILE*100)}_percentile'] = percentile_metric
 
     return summary
 

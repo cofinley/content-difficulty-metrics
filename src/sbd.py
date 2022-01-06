@@ -23,54 +23,14 @@ nlp = pipeline('ner', model=model, tokenizer=tokenizer)
 print('Finished loading SBD model.')
 
 
-def segment_sentences(text: str) -> List[str]:
-    # Batches of 64 tokens through nlp()
-    batch = []
-    sents = []
-    words = text.split()
-    for word in words:
-        if len(batch) == BATCH_SIZE:
-            batch_text = ' '.join(batch)
-            start_tags = nlp(batch_text)
-            start_indexes = [start['start'] for start in start_tags]
-            for i in range(len(start_indexes)):
-                if i == 0:
-                    if start_indexes[i] == 0:
-                        continue
-                    elif len(sents):
-                        # New batch starts off in the middle of a sentence, append to end of last sentence
-                        sent_tail = batch_text[:start_indexes[i]]
-                        sents[-1] += ' ' + sent_tail
-                    continue
-                sent = batch_text[start_indexes[i-1]:start_indexes[i]]
-                sents.append(sent.strip())
-                if i == len(start_indexes)-1:
-                    sent = batch_text[start_indexes[i]:]
-                    sents.append(sent.strip())
-            batch = []
-        batch.append(word)
-    else:
-        batch_text = ' '.join(batch)
-        start_tags = nlp(batch_text)
-        start_indexes = [start['start'] for start in start_tags]
-        for i in range(len(start_indexes)):
-            if i == 0:
-                if start_indexes[i] == 0:
-                    continue
-                elif len(sents):
-                    # New batch starts off in the middle of a sentence, append to end of last sentence
-                    sent_tail = batch_text[:start_indexes[i]]
-                    sents[-1] += ' ' + sent_tail
-                continue
-            sent = batch_text[start_indexes[i-1]:start_indexes[i]]
-            sents.append(sent.strip())
-            if i == len(start_indexes)-1:
-                sent = batch_text[start_indexes[i]:]
-                sents.append(sent.strip())
-    return sents
-
-
 def get_sentences(body: str) -> List[str]:
+    """
+    Convert body of text into sentences
+    Args:
+        body: string body
+
+    Returns: list of sentence strings
+    """
     all_text = body.strip()
     has_punctuation = re.search(END_PUNCTUATION_REGEX, all_text) is not None
     use_true_sentences = False
@@ -83,3 +43,47 @@ def get_sentences(body: str) -> List[str]:
         sentences = segment_sentences(all_text)
 
     return [sentence.strip() for sentence in sentences]
+
+
+def segment_sentences(text: str) -> List[str]:
+    # Batches of 64 tokens through nlp()
+    batch = []
+    sents = []
+    words = text.split()
+    for word in words:
+        if len(batch) == BATCH_SIZE:
+            sents += process_batch(batch)
+            batch = []
+        batch.append(word)
+    else:
+        sents += process_batch(batch)
+    return sents
+
+
+def process_batch(word_batch: List[str]) -> List[str]:
+    """
+    Process batch of words into sentences
+    Args:
+        word_batch: batch of ``BATCH_SIZE`` words
+
+    Returns: segmented sentences
+    """
+    sentences = []
+    batch_text = ' '.join(word_batch)
+    start_tags = nlp(batch_text)
+    start_indexes = [start['start'] for start in start_tags]
+    for i in range(len(start_indexes)):
+        if i == 0:
+            if start_indexes[i] == 0:
+                continue
+            elif len(sentences):
+                # New batch starts off in the middle of a sentence, append to end of last sentence
+                sent_tail = batch_text[:start_indexes[i]]
+                sentences[-1] += ' ' + sent_tail
+            continue
+        sentence = batch_text[start_indexes[i - 1]:start_indexes[i]]
+        sentences.append(sentence.strip())
+        if i == len(start_indexes) - 1:
+            sentence = batch_text[start_indexes[i]:]
+            sentences.append(sentence.strip())
+    return sentences

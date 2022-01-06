@@ -6,7 +6,6 @@ from typing import List
 from pathlib import Path
 
 import pandas as pd
-import numpy as np
 from tqdm import tqdm
 
 import sbd
@@ -42,26 +41,9 @@ def parse_csv(content_title) -> List[dict]:
     return cues
 
 
-def get_wpm(text: str, start: str, end: str) -> float:
-    words = re.split(WORD_SPLIT_REGEX, text)
-    num_words = len(words)
-    time_diff = float(end) - float(start)
-    time_diff_minutes = time_diff / 60
-    wpm = num_words / time_diff_minutes
-    return wpm
-
-
-def calculate_median_wpm(cues: List[dict]) -> float:
-    wpms = []
-    for cue in cues:
-        wpm = get_wpm(cue['text'], cue['start'], cue['end'])
-        wpms.append(wpm)
-    return np.median(wpms)
-
-
 def process_installments(text_series: pd.Series) -> pd.Series:
-    all_text = text_series.str.cat(sep=' ')
-    sentences = sbd.get_sentences(all_text.strip())
+    all_text = text_series.str.strip().str.cat(sep=' ')
+    sentences = sbd.get_sentences(all_text)
     return pd.Series(sentences)
 
 
@@ -91,44 +73,18 @@ def main(target_language: str, native_language: str, is_verbose: bool, content_t
         if content_title_override is not None and content_title != content_title_override:
             continue
         print('Content:', content_title)
-        t = tqdm(total=9, position=1, leave=False)
-        t.update(1)
-        t.write('Parsing subtitle csv...')
         cues = parse_csv(content_title)
-        t.update(2)
-        t.write('Calculating median WPM...')
-        median_wpm = calculate_median_wpm(cues)
-        t.update(3)
-
-        t.write('Getting sentences from cues...')
         sentences = get_sentences_from_cues(cues)
-        t.update(4)
-        t.write('Saving sentences...')
         save_sentences(sentences, content_title)
-        t.update(5)
-
-        t.write('Calculating sentence metrics...')
         sentence_metrics_df = sentence_metrics.calculate_sentence_metrics(sentences)
-        t.update(6)
-        t.write('Saving sentence metrics...')
         sentence_metrics.save_sentence_metrics(sentence_metrics_df, content_title)
-        t.update(7)
-
-        t.write('Calculating summary metrics...')
         summary_metrics_dict = summary_metrics.calculate_summary(sentence_metrics_df, content_title)
-        t.update(8)
-        summary_metrics_dict['median_wpm'] = median_wpm
-        t.write('Saving summary metrics...')
         summary_metrics.save_summary_metrics(summary_metrics_dict, content_title)
-        t.update(9)
-        t.close()
 
 
 if __name__ == '__main__':
-    print('Starting')
-
     argparser = argparse.ArgumentParser(
-        description='Calculate median frequency and WPM of directory of subtitles')
+        description='Calculate difficulty metrics of a directory of subtitles')
     argparser.add_argument(
         '--content-title',
         help='Content title matching subdirectory in data/subtitles',
